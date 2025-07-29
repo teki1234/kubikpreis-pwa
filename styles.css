@@ -1,0 +1,26 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  max-width: 600px;
+  margin: auto;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.light { background-color: #ffffff; color: #000000; }
+body.dark { background-color: #121212; color: #ffffff; }
+
+input, button {
+  margin: 5px 0;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 6px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.toggle-darkmode { margin-bottom: 15px; }
+.info { margin-top: 10px; font-weight: bold; }
+.result { margin-top: 15px; font-weight: bold; color: #4caf50; }
+.actions { display: flex; gap: 10px; margin-top: 10px; }
+.danger { background-color: #ffdddd; border: 1px solid red; }
