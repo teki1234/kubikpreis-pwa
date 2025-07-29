@@ -325,3 +325,43 @@ async function exportAsText() {
   link.download = `kubikpreis_${customer || 'berechnung'}.txt`;
   link.click();
 }
+async function exportAsPDF() {
+  const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
+  const doc = new jsPDF();
+  const t = translations[currentLang].table;
+  const customer = document.getElementById('kundenName').value.trim();
+  const date = new Date();
+  const dateStr = date.toLocaleDateString() + ', ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  doc.setFontSize(16);
+  doc.text(t.pdfTitle, 10, 15);
+
+  doc.setFontSize(12);
+  if (customer) doc.text(t.customerLabel + customer, 10, 25);
+  doc.text(t.dateLabel + dateStr, 10, customer ? 33 : 25);
+
+  doc.autoTable({
+    startY: customer ? 42 : 34,
+    head: [["#", "Holzart", "Menge (m³)", "Einzelpreis (€)", "Gesamt (€)"]],
+    body: calculations.map((e, i) => [
+      i + 1,
+      e.name,
+      e.amount.toFixed(2),
+      e.price.toFixed(2),
+      e.total.toFixed(2)
+    ]),
+    styles: { fontSize: 10, cellPadding: 3 },
+    headStyles: { fillColor: [25, 118, 210], textColor: 255, halign: 'center' },
+    columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 10;
+  const sum = calculations.reduce((a, c) => a + c.total, 0);
+  doc.setFont(undefined, 'bold');
+  doc.text((currentLang === 'de' ? 'Gesamtsumme: ' : 'Total: ') + sum.toFixed(2) + ' €', 10, finalY);
+  doc.setFont(undefined, 'normal');
+  doc.text(t.signature, 10, finalY + 20);
+  doc.line(40, finalY + 20, 120, finalY + 20);
+
+  doc.save(`kubikpreis_${customer || 'berechnung'}.pdf`);
+}
