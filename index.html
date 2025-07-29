@@ -1,24 +1,24 @@
-<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title data-i18n="title">Kubikpreis-Rechner für Holzarten</title>
 
-
+  <!-- PWA Manifest & Theme -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1976d2">
 
-  
+  <!-- Icons -->
   <link rel="icon" href="icon-512.png">
 
- 
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 
+  <!-- Externe Bibliotheken -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
 
- 
+  <!-- App-Script -->
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -28,14 +28,12 @@
       <option value="en">English</option>
     </select>
     <button id="darkModeToggle" class="toggle-darkmode">
-      <span id="toggleIcon">🌙</span>
-      <span id="toggleLabel" data-i18n="darkMode">Dark Mode</span>
+      <span id="toggleIcon">🌙</span> <span id="toggleLabel" data-i18n="darkMode">Dark Mode</span>
     </button>
   </header>
 
   <main>
     <h2 data-i18n="title">Kubikpreis-Rechner für Holzarten</h2>
-
     <section>
       <h4 data-i18n="section1">1. Neue Holzart speichern</h4>
       <input type="text" id="holzart" placeholder="Holzart (z.B. Eiche)" data-i18n-placeholder="holzartPlaceholder">
@@ -45,10 +43,7 @@
 
     <section>
       <h4 data-i18n="section2">2. Holzart auswählen & berechnen</h4>
-      <div class="select-field">
-        <select id="holzSelect"></select>
-        <button id="deleteWoodBtn" class="delete-btn" title="Löschen">🗑️</button>
-      </div>
+      <ul id="holzList"></ul>
       <div id="auswahlInfo" class="info"></div>
       <input type="number" id="kubik" placeholder="Menge in m³" step="0.01" data-i18n-placeholder="quantityPlaceholder">
       <button id="calcSaveBtn">➕ <span data-i18n="calcSave">Berechnen & speichern</span></button>
@@ -67,7 +62,6 @@
       <button id="exportTextBtn">📄 <span data-i18n="exportText">Export als Text</span></button>
       <button id="exportPdfBtn">🧾 <span data-i18n="exportPdf">Export als PDF</span></button>
     </div>
-
     <button id="clearAllBtn" class="danger">🗑️ <span data-i18n="clearAll">Alles löschen</span></button>
     <button id="resetHolzBtn" class="danger">🗑️ <span data-i18n="resetWood">Alle Holzarten löschen</span></button>
   </main>

@@ -84,8 +84,7 @@ const langSelect    = document.getElementById('langSelect');
 const holzInput     = document.getElementById('holzart');
 const preisInput    = document.getElementById('preis');
 const addHolzBtn    = document.getElementById('addHolzBtn');
-const holzSelect    = document.getElementById('holzSelect');
-const deleteWoodBtn = document.getElementById('deleteWoodBtn');
+const holzList      = document.getElementById('holzList');
 const auswahlInfo   = document.getElementById('auswahlInfo');
 const kubikInput    = document.getElementById('kubik');
 const calcSaveBtn   = document.getElementById('calcSaveBtn');
@@ -107,104 +106,72 @@ const saveWood = () => localStorage.setItem('holzarten', JSON.stringify(woodType
 const saveCalc = () => localStorage.setItem('berechnungen', JSON.stringify(calculations));
 
 // Initialisierung
-document.addEventListener('DOMContentLoaded', () => {
-  // Theme laden
+window.addEventListener('DOMContentLoaded', () => {
+  // Theme
   const savedTheme = localStorage.getItem('theme') || 'dark';
   document.body.classList.add(savedTheme);
   document.body.classList.toggle('light', savedTheme !== 'dark');
   updateDarkToggleLabel();
 
-  // Sprache laden
-  currentLang = localStorage.getItem('lang') || (navigator.language.startsWith('en') ? 'en' : 'de');
+  // Sprache
+  currentLang = localStorage.getItem('lang')
+    || (navigator.language.startsWith('en') ? 'en' : 'de');
   langSelect.value = currentLang;
   applyTranslation();
 
-  // Dropdown und Event-Listener initialisieren
-  updateWoodSelect();
-  holzSelect.addEventListener('change', onWoodSelectChange);
-  deleteWoodBtn.addEventListener('click', onDeleteWood);
-
-  calcSaveBtn.addEventListener('click', calculateAndSave);
-  addHolzBtn.addEventListener('click', addWoodType);
-  clearAllBtn.addEventListener('click', clearAllCalc);
-  resetHolzBtn.addEventListener('click', resetWoodTypes);
-  darkToggle.addEventListener('click', toggleDarkMode);
-  exportTextBtn.addEventListener('click', exportAsText);
-  exportPdfBtn.addEventListener('click', exportAsPDF);
-
-  // Auflistungen
+  updateList();
   updateCalcList();
   updateSubtotal();
 
-  // Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js');
   }
 });
 
-// Sprachwechsel
+// Sprache wechseln
 langSelect.addEventListener('change', () => {
   currentLang = langSelect.value;
   localStorage.setItem('lang', currentLang);
   applyTranslation();
 });
 
-// Übersetzungen anwenden
 function applyTranslation() {
   const t = translations[currentLang];
-  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t[el.getAttribute('data-i18n')]);
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t[el.getAttribute('data-i18n-placeholder')]);
+  document.querySelectorAll('[data-i18n]').forEach(el =>
+    el.textContent = t[el.getAttribute('data-i18n')]
+  );
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el =>
+    el.placeholder = t[el.getAttribute('data-i18n-placeholder')]
+  );
   updateDarkToggleLabel();
 }
 
-// Dark Mode Label updaten
 function updateDarkToggleLabel() {
   const t = translations[currentLang];
   const isDark = document.body.classList.contains('dark');
-  toggleIcon.textContent = isDark ? '🌞' : '🌙';
+  toggleIcon.textContent  = isDark ? '🌞' : '🌙';
   toggleLabel.textContent = isDark ? t.lightMode : t.darkMode;
 }
 
-// Holz Dropdown aktualisieren
-function updateWoodSelect() {
-  holzSelect.innerHTML = '';
-  woodTypes.forEach((w, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = `${w.name} - ${w.preis.toFixed(2)} €/m³`;
-    holzSelect.append(opt);
+// Liste der Holzarten
+function updateList() {
+  holzList.innerHTML = '';
+  woodTypes.forEach((w,i) => {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.textContent = `${w.name} - ${w.preis.toFixed(2)} €/m³`;
+    btn.onclick = () => selectWood(i);
+    const del = document.createElement('button');
+    del.textContent = '🗑️';
+    del.className = 'delete-btn';
+    del.onclick = () => deleteWood(i);
+    li.append(btn, del);
+    holzList.append(li);
   });
-  if (woodTypes.length > 0) {
-    holzSelect.value = 0;
-    onWoodSelectChange();
-  } else {
-    selectedIndex = null;
-    auswahlInfo.innerText = '';
-  }
 }
 
-// Handler bei Auswahländerung
-function onWoodSelectChange() {
-  selectedIndex = parseInt(holzSelect.value, 10);
-  const w = woodTypes[selectedIndex];
-  auswahlInfo.innerText = translations[currentLang].messages.selected({ name: w.name, price: w.preis });
-}
-
-// Handler Löschen Holzart
-function onDeleteWood() {
-  if (selectedIndex === null) return;
-  const w = woodTypes[selectedIndex];
-  if (!confirm(translations[currentLang].alerts.confirmDeleteWood(w))) return;
-  woodTypes.splice(selectedIndex, 1);
-  saveWood();
-  updateWoodSelect();
-  updateCalcList();
-  updateSubtotal();
-}
-
-// Holzart hinzufügen
 function addWoodType() {
-  const name = holzInput.value.trim();
+  const name  = holzInput.value.trim();
   const price = parseFloat(preisInput.value);
   if (!name || isNaN(price)) {
     alert(translations[currentLang].alerts.invalidWood);
@@ -212,12 +179,18 @@ function addWoodType() {
   }
   woodTypes.push({ name, preis: price });
   saveWood();
-  updateWoodSelect();
+  updateList();
   holzInput.value = '';
   preisInput.value = '';
 }
 
-// Berechnen & speichern
+function selectWood(i) {
+  selectedIndex = i;
+  const w = woodTypes[i];
+  auswahlInfo.innerText = translations[currentLang].messages.selected({ name: w.name, price: w.preis });
+}
+
+// Berechnung & Speichern
 function calculateAndSave() {
   if (selectedIndex === null) {
     alert(translations[currentLang].alerts.selectWood);
@@ -237,10 +210,9 @@ function calculateAndSave() {
   ausgabe.innerText = translations[currentLang].messages.added({ name: w.name, amount, total });
 }
 
-// Kalkulationen-Liste updaten
 function updateCalcList() {
   merkListe.innerHTML = '';
-  calculations.forEach((e, i) => {
+  calculations.forEach((e,i) => {
     const li = document.createElement('li');
     li.innerHTML = `
       <strong>${e.name}</strong><br>
@@ -252,25 +224,21 @@ function updateCalcList() {
   });
 }
 
-// Zwischensumme updaten
 function updateSubtotal() {
-  const sum = calculations.reduce((a, c) => a + c.total, 0);
+  const sum = calculations.reduce((a,c) => a + c.total, 0);
   zwSum.innerText = translations[currentLang].table.subtotal(sum);
   posList.innerHTML = calculations.map(e =>
     `- ${e.name}: ${e.amount.toFixed(2)} m³ → ${e.total.toFixed(2)} €`
   ).join('<br>') || translations[currentLang].table.noItems;
 }
 
-// Kalkulation löschen
 function deleteCalc(i) {
-  calculations.splice(i, 1);
+  calculations.splice(i,1);
   saveCalc();
   updateCalcList();
   updateSubtotal();
 }
-window.deleteCalc = deleteCalc;
 
-// Alle Kalkulationen löschen
 function clearAllCalc() {
   if (confirm(translations[currentLang].alerts.confirmDeleteCalc)) {
     calculations = [];
@@ -280,19 +248,28 @@ function clearAllCalc() {
   }
 }
 
-// Holzarten zurücksetzen
+function deleteWood(i) {
+  if (confirm(translations[currentLang].alerts.confirmDeleteWood(woodTypes[i]))) {
+    woodTypes.splice(i,1);
+    saveWood();
+    updateList();
+    auswahlInfo.innerText = '';
+    ausgabe.innerText     = '';
+    selectedIndex = null;
+  }
+}
+
 function resetWoodTypes() {
   if (confirm(translations[currentLang].alerts.confirmResetWood)) {
     localStorage.removeItem('holzarten');
     woodTypes = [];
+    updateList();
+    auswahlInfo.innerText = '';
+    ausgabe.innerText     = '';
     selectedIndex = null;
-    updateWoodSelect();
-    updateCalcList();
-    updateSubtotal();
   }
 }
 
-// Dark Mode umschalten
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle('dark');
   document.body.classList.toggle('light', !isDark);
@@ -300,6 +277,55 @@ function toggleDarkMode() {
   updateDarkToggleLabel();
 }
 
+// Globale Funktionen für inline-Buttons
+window.deleteCalc = deleteCalc;
+window.deleteWood = deleteWood;
+
+// Event-Listener
+darkToggle.addEventListener('click', toggleDarkMode);
+addHolzBtn.addEventListener('click', addWoodType);
+calcSaveBtn.addEventListener('click', calculateAndSave);
+clearAllBtn.addEventListener('click', clearAllCalc);
+resetHolzBtn.addEventListener('click', resetWoodTypes);
+exportTextBtn.addEventListener('click', exportAsText);
+exportPdfBtn.addEventListener('click', exportAsPDF);
+
+// Export-Funktionen
+async function exportAsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const t = translations[currentLang].table;
+  const customer = kundenName.value.trim();
+  const date = new Date();
+  const dateStr = date.toLocaleDateString() + ', ' + date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+  doc.setFontSize(16);
+  doc.text(t.pdfTitle, 10, 15);
+  doc.setFontSize(12);
+  if (customer) doc.text(t.customerLabel + customer, 10, 25);
+  doc.text(t.dateLabel + dateStr, 10, customer ? 33 : 25);
+
+  doc.autoTable({
+    startY: customer ? 42 : 34,
+    head: [["#", currentLang==='de'?'Holzart':'Wood', currentLang==='de'?'Menge (m³)':'Qty (m³)', currentLang==='de'?'Einzelpreis (€)':'Price (€)', currentLang==='de'?'Gesamt (€)':'Total (€)']],
+    body: calculations.map((e,i)=>[
+      i+1, e.name, e.amount.toFixed(2), e.price.toFixed(2), e.total.toFixed(2)
+    ]),
+    styles: { fontSize:10, cellPadding:3 },
+    headStyles: { fillColor:[25,118,210], textColor:255, halign:'center' },
+    columnStyles: { 0:{halign:'center',cellWidth:10},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'} }
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 10;
+  const sum = calculations.reduce((a,c)=>a+c.total,0);
+  doc.setFont(undefined,'bold');
+  doc.text((currentLang==='de'?'Gesamtsumme: ':'Total: ') + sum.toFixed(2) + ' €', 10, finalY);
+  doc.setFont(undefined,'normal');
+  doc.text(t.signature, 10, finalY + 20);
+  doc.line(40, finalY + 20, 120, finalY + 20);
+
+  doc.save(`kubikpreis_${customer || 'berechnung'}.pdf`);
+}
 
 async function exportAsText() {
   const t = translations[currentLang].table;
@@ -324,44 +350,4 @@ async function exportAsText() {
   link.href = URL.createObjectURL(blob);
   link.download = `kubikpreis_${customer || 'berechnung'}.txt`;
   link.click();
-}
-async function exportAsPDF() {
-  const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
-  const doc = new jsPDF();
-  const t = translations[currentLang].table;
-  const customer = document.getElementById('kundenName').value.trim();
-  const date = new Date();
-  const dateStr = date.toLocaleDateString() + ', ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  doc.setFontSize(16);
-  doc.text(t.pdfTitle, 10, 15);
-
-  doc.setFontSize(12);
-  if (customer) doc.text(t.customerLabel + customer, 10, 25);
-  doc.text(t.dateLabel + dateStr, 10, customer ? 33 : 25);
-
-  doc.autoTable({
-    startY: customer ? 42 : 34,
-    head: [["#", "Holzart", "Menge (m³)", "Einzelpreis (€)", "Gesamt (€)"]],
-    body: calculations.map((e, i) => [
-      i + 1,
-      e.name,
-      e.amount.toFixed(2),
-      e.price.toFixed(2),
-      e.total.toFixed(2)
-    ]),
-    styles: { fontSize: 10, cellPadding: 3 },
-    headStyles: { fillColor: [25, 118, 210], textColor: 255, halign: 'center' },
-    columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
-  });
-
-  const finalY = doc.lastAutoTable.finalY + 10;
-  const sum = calculations.reduce((a, c) => a + c.total, 0);
-  doc.setFont(undefined, 'bold');
-  doc.text((currentLang === 'de' ? 'Gesamtsumme: ' : 'Total: ') + sum.toFixed(2) + ' €', 10, finalY);
-  doc.setFont(undefined, 'normal');
-  doc.text(t.signature, 10, finalY + 20);
-  doc.line(40, finalY + 20, 120, finalY + 20);
-
-  doc.save(`kubikpreis_${customer || 'berechnung'}.pdf`);
 }
